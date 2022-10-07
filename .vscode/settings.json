@@ -1,0 +1,9 @@
+{
+    "emmet.preferences": {
+    
+    },
+    "python.languageServer": "Pylance",
+    "python.analysis.extraPaths": [
+        "C:/Users/steineph/DataAnalysis/UWO-Dataanalysis/libs"
+    ]    
+}
