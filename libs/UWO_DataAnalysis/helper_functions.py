@@ -253,6 +253,28 @@ def filter_db_for_boxplot(sensor_group, start, parameter_unit, keyword):
     )
     return data_dataframe
 
+def filter_db_multiple_parameters(sensor_group, start, parameter_units):
+    '''
+    querry to filter the the database to plot the boxplots.
+    For most types of the sensors, this query is "good enough", ie. filtering for a sensor type
+    combined with the sensors parameter unit will filter the database for comparable sensors.
+    However in some cases we need more filtering: Most bt sensors measure two temperatures. 
+    We have to filter more in these cases - TODO! maybe give an option in the function? 
+    '''
+    dp=DataPool()
+    data_dataframe = dp.query_df(
+    f'''
+    SELECT  t_signal.value, t_signal.timestamp, t_signal.parameter_id, t_signal.source_id, t_source.name as source_name, t_parameter.name AS parameter_name, t_parameter.unit
+    FROM signal AS t_signal
+    LEFT JOIN source AS t_source
+        ON t_signal.source_id = t_source.source_id
+    LEFT JOIN parameter AS t_parameter
+        ON t_signal.parameter_id = t_parameter.parameter_id
+    WHERE LEFT(t_source.name, 2 ) = '{sensor_group}' AND t_signal.timestamp > '{start}' AND t_parameter.unit in {parameter_units}
+    '''
+    )
+    return data_dataframe
+
 def filter_db_for_boxplot2(sensor_group, start, parameter_unit, keyword):
     ''' 
     querry to filter the the database to plot the boxplots.
@@ -500,5 +522,9 @@ def plot_flattened_signal(data, group_att='source_name', value_column='value',
         
         lineplot=sns.lineplot(data=plotdata_filtered, x='timestamp', y='trend', ax=ax, label=source)
         #lineplot=sns.scatterplot(data=plotdata_filtered, x='timestamp', y='trend', ax=ax, label=source)
+
+def plot_QH_relation(source):
+    fig, ax = plt.subplots(figsize=(15, 15))
+    relation_plot=sns.scatterplot(data=source, x='flowrate', y='m')
     
 
