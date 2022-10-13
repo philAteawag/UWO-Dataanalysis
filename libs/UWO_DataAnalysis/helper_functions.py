@@ -85,8 +85,6 @@ def downsampling_faulty_sensors2(dataframe, frequency):
     dataframe=dataframe.drop_duplicates(subset='timestamp')
     return dataframe
         
-
-
 def plot_packages_received_histogram(source_name, start_date, save_directory=''):
     dp=DataPool()
     #get all sensor data from the database
@@ -178,15 +176,17 @@ def plot_timeseries(source_name, start_date, save_directory=''):
             os.makedirs(os.path.join(save_directory, 'timeseries'))
         fig.write_html(os.path.join(save_directory, 'timeseries', '{}_{}.html'.format(source_name, parameter_value)))
 
-def calculate_PSR(source_name, start_date, resolution='M', allow_higher_samplingrates=True, thresh_drop_values=-100000 ):
+def calculate_PSR(source_name, start_date,  resolution='M', allow_higher_samplingrates=True, thresh_drop_values=-100000, end_date='' ):
     '''
     function to find the PSR of a sensor. Here PSR is defined as the amount of received packages divided by the expected amount of sent packages if the 
     transmission was allways successfull.
     '''
     dp=DataPool()
     #get all sensor data from the database
-    all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, minimal=False, show_query=False, to_dataframe=True)
-
+    if end_date!='':
+        all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, end=end_date, minimal=False, show_query=False, to_dataframe=True)
+    else:
+        all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, minimal=False, show_query=False, to_dataframe=True)
     #we are only interested in the sensors actual value
     all_parameters=all_sensor_data['parameter'].unique()
     main_parameters=extract_main_parameter(all_parameters)
