@@ -178,8 +178,26 @@ def plot_timeseries(source_name, start_date, save_directory=''):
 
 def calculate_PSR(source_name, start_date,  resolution='M', allow_higher_samplingrates=True, thresh_drop_values=-100000, end_date='' ):
     '''
-    function to find the PSR of a sensor. Here PSR is defined as the amount of received packages divided by the expected amount of sent packages if the 
-    transmission was allways successfull.
+    function to find the PSR of a sensor. Here PSR is defined as the amount of received packages divided by the 
+    expected amount of sent packages if the transmission was allways successfull.
+
+    Parameters
+    ----------
+    source_name : str
+        name of the source of interest
+    start_date : str
+        date that will be considered for calculation of PSR
+    resolution: str
+        Defines what the resolution of the PSR should be. (Yearly: 'Y', Quarterly: 'Q', Monthly: 'M', 'Weekly':'W', Daily:'D')
+        For full specification of available frequencies, 
+        please see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases.
+    allow_higher_samplingrates : bool
+        Wheter or not higher frequencies than the most occuring sampling frequencies are allowed for calculation of PSR. 
+        If set to True, PSR can be higher than 1
+    thresh_drop_values : float
+        which values to ignore when calculating PSR. This feature is not tested and does most likely not work yet.
+    end_date : str
+        data collected after end date will not be considered
     '''
     dp=DataPool()
     #get all sensor data from the database
@@ -479,24 +497,64 @@ def downsample_data(dataframe, timestamp_col_name='timestamp', groupby_att='sour
     return data
 
 def filter_data2(data, valid_parameters, valid_sources):
+    '''
+    yet another filter function. Returns a filtered dataframe
 
+    Parameters
+    ----------
+    data : pandas DataFrame
+    valid_parameters : list
+        list of valid parameters (among 'parameter_name'). Other parameters will be filtered out
+    valid_sources : list
+        list of valid sources (among 'source_name'). Other parameters will be filtered out
+    '''
     plot_data=data[data['parameter_name'].isin(valid_parameters)]
     plot_data=plot_data[plot_data['source_name'].isin(valid_sources)]
 
     return plot_data
 
 def wait_until(somepredicate, timeout, period=0.25, *args, **kwargs):
-  mustend = time.time() + timeout
-  while time.time() < mustend:
-    if somepredicate(*args, **kwargs): return True
-    time.sleep(period)
-  return False
+    '''
+    function to pause run until a condition is met
+    '''  
+    mustend = time.time() + timeout
+    while time.time() < mustend:
+        if somepredicate(*args, **kwargs): return True
+        time.sleep(period)
+    return False
 
 def plot_flattened_signal(data, group_att='source_name', value_column='value', 
                             valid_parameters='', valid_sources='',
                             timestamp_column='timestamp', median_win_size=3, mean_win_size=24, 
                             normalize=None, min_max=[0,100]):
-    
+    '''
+    function to plot signal after filtering it with mean and median
+
+    Parameters
+    ----------
+    data : pandas DataFrame()
+        dataframe that contains the necessary data for the plot
+    group_att : str
+        How to group before applying the mean and median filter
+    value_column : str
+        Data for y-axis
+    valid_parameters : list
+        list of valid parameters (among 'parameter_name'). Other parameters will be filtered out
+    valid_sources : list
+        list of valid sources (among 'source_name'). Other parameters will be filtered out
+    timestamp_column : str
+        name of columns containing the timestamp information
+    median_win_size : int
+        size of window size used for the rolling median filter
+    mean_win_size : int
+        size of window size used for the rolling mean filter
+    normalize : Any
+        Data can be normalized. normalization can be done by setting normalize to <mean> or <median>.
+    min_max : list
+        list containing the minimum and maxium allowed values. Values outside of the defined range will 
+        be overwritten for the plot.
+    '''
+
     plotdata=filter_data2(data, valid_parameters, valid_sources)
     #plotdata=downsample_data(plotdata)
 
@@ -519,7 +577,6 @@ def plot_flattened_signal(data, group_att='source_name', value_column='value',
         if normalize == 'median':
             plotdata_filtered['trend']=plotdata_filtered['trend']/plotdata_filtered['value'].median()
 
-        
         lineplot=sns.lineplot(data=plotdata_filtered, x='timestamp', y='trend', ax=ax, label=source)
         #lineplot=sns.scatterplot(data=plotdata_filtered, x='timestamp', y='trend', ax=ax, label=source)
 
