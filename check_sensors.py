@@ -69,8 +69,6 @@ class PSR_Sensor():
         self.data = psr_df_filtered
         return psr_df_filtered
 
-        
-
 class Sensor_Report(PdfPages):
     def __init__(self, filename):
         self.current_page = 0    
