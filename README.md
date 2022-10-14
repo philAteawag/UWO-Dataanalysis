@@ -44,7 +44,31 @@ Some scritps to analyze the UWO Data
  
  2. Compare_groups.ipynb
  
-    Interactive notebook to create boxplot to compare signal of multiple sensors.
+    Interactive notebook to create boxplots to compare signal of multiple sensors.
+    
+ 3. dataanalyisis2.ipynb
+    
+    can be deleted...
+  
+ 4. explore_data_da.ipynb
+
+    can be deleted...
+    
+ 5. main.ipynb
+
+    can be deleted...
+    
+ ### other files
+ 
+ 1. config_concept.json
+     
+    This file links similiar measuring sensors. Such a file is needed if signal validation (at least the one that ive started) should be outmated.
+    The file is completely incomplete and only shows the necessary structure.
+    
+ 2. requirements.txt
+ 
+    Things should run if these packages are installed
+ 
     
   
 
