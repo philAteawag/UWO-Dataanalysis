@@ -1,0 +1,12 @@
+{
+    "bt_dl917_162_luppmenweg":{
+        "source_name":"bt_dl917_162_luppmenweg",
+        "main_parameter":"water_temperature",
+        "similar_to":"bt_dl923_166_luppmenweg"
+    },
+    "bt_dl923_166_luppmenweg":{
+        "source_name":"bt_dl923_166_luppmenweg",
+        "main_parameter":"water_temperature",
+        "similar_to":"bt_dl923_166_luppmenweg"
+    }
+}

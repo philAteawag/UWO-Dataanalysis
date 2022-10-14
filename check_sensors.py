@@ -1,5 +1,8 @@
 import sys
-from time import strftime
+from time import strftime, time
+from tokenize import group
+#from webbrowser import get
+#from asyncio import timeouts
 sys.path.append(r'C:\Users\steineph\DataAnalysis\UWO-Dataanalysis\libs')
 from UWO_DataAnalysis import helper_functions 
 from datapool_client import DataPool
@@ -11,17 +14,190 @@ import tqdm
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import os
+import json
+from pathlib import Path
+from scipy.stats import ks_2samp
 
-# Disable
 def blockPrint():
+    '''
+    function to block prints.
+    '''
     sys.stdout = open(os.devnull, 'w')
 
-# Restore
 def enablePrint():
+    '''
+    function to reenable prints.
+    '''
     sys.stdout = sys.__stdout__
 
-class PSR_Sensor():
+class Check_Signal_Sensor():
+    '''
+    Class to check the current Signal for validity. follwoing steps are conducted:
+        1. a config file has the information which sensors measure similiar values. The config file does not exist yet...! See here
+            how it should be constructed: C:\Users\steineph\DataAnalysis\UWO-Dataanalysis\config_concept.json
+        2. Using the config file, we take the measurements of two similiar sensors, and calculate the relative difference of the measurements. 
+            2.1 both timeseries are resampled to a frequency of 1h
+            2.2 we apply a moving average filter of 24h (window size of 24) to smoothen the timeseries. 
+            2.3 we standardize both timeseries
+            2.4 we join the two timeseries on the same timestamp
+            2.5 we calcualte the absolute and the realitve difference at every timestamp.
+        3. We can than compare the difference of the two signals over the last week to the difference of the two signals over the last 16weeks. 
+            To do so we can compare wheter those two distributions are "similar" by calculating the two sided Kolmogorov-Smirnov (K-S) statistic
+            of the two distributions. If the statistic gives a high P value, it means that the two samples 
+            (samples of last week and samples of last 16 weeks) arrose from a different underlying distribution
+            --> This could then mean that one sensor is now making faulty measurements. 
+
+    Attributes
+    ----------
+    config_data : json
+        data that contains the information, which other sensor produces very similar values and which parameter is looked at
+    sourec_to_check : str
+        the name of the source that is checked
+    source_to_check_against : str
+        the source that has similiar measurements
+    parameter_name : str
+        the parameter that is checked
+    signal_to_check_current : pandas dataframe
+        signal of the last week
+    signal_to_check_historic pandas DataFrame
+        singal of the last 4 month (the newest week is excluded)
+    signal_to_check_against_current : pandas DataFrame
+        signal of the sensor that shows similiar measurements of the most recent week
+    signal_to_check_against_historic : pandas DataFrame
+        signal of the sensor that shows similiar measurements of the last 4 month (most rececent week is excluded)
+    diff_historic_rel : pandas Series
+        relativ difference of the sensor data compared to measurement values of a similar sensor 
+        (data collected over the last 16 weeks (most current one excluded))
+    diff_historic_abs : pandas Series
+        absolut difference of the sensor data compared to measurement values of a similar sensor 
+        (data collected over the last 16 weeks (most current one excluded))
+    diff_current_rel : pandas Series  
+        relativ difference of the sensor data compared to measurement values of a similar sensor 
+        (data collected over most current week)
+    diff_current_abs : pandas Series
+        absolut difference of the sensor data compared to measurement values of a similar sensor 
+        (data collected over most current week)
+    ks_test : KS statistic and P value
+        The KS statistic is used to compare the distribution of the difference of the tow signals of the last week, and the of the last
+        16 weeks. 
+            The KS statistic gives an estimate how well the distributions fit each other. If the value is 1, there is a perfect fit.
+            If it is a 0 it is a terible fit. 
+            The P-value gives an estimate how likely it is that we observe such a fit. 
+            In short: if the KS statistic is low and the P value is low, we can assume, that the two distributions are not the same
+            and therefore, that one sensor has faulty measurements.
+        
+    Methods
+    -------
+    get_dif_between2signals 
+        takes two signals, joins them on the same timestamp, standardizes them and takes the difference.
+    '''
+    def __init__(self, source_to_check, config_file=r'C:\Users\steineph\DataAnalysis\UWO-Dataanalysis\config_concept.json'):
+        '''
+        Parameters
+        ----------
+        source_to_check : str 
+            source_name which signal should be checked
+        init_file : json
+            json file containing the information which main parameter is used for the checking and also which sensor shows similiar sensor data
+        '''
+        self.config_data=self.load_config_json(config_file)
+        self.source_to_check=source_to_check
+        self.source_to_check_against=self.config_data[self.source_to_check]['similar_to']
+        print(self.source_to_check_against)
+        self.parameter_name = self.config_data[self.source_to_check]['main_parameter']
+        self._current_date, self._date1weekago, self._date4monthago=self.get_current_and_date4monthago()
+        self.signal_to_check_current = self.load_signal(self.source_to_check, start = self._date1weekago, end=self._current_date, parameter_name=self.parameter_name)
+        self.signal_to_check_historic = self.load_signal(self.source_to_check, start = self._date4monthago, end=self._date1weekago, parameter_name=self.parameter_name)
+        self.signal_to_check_against_current= self.load_signal(self.source_to_check_against, start=self._date1weekago, end = self._current_date, parameter_name=self.parameter_name)
+        self.signal_to_check_against_historic= self.load_signal(self.source_to_check_against, start=self._date4monthago, end = self._date1weekago, parameter_name=self.parameter_name)
+        self.diff_historic_rel, self.diff_historic_abs = self.get_dif_between2signals(df1=self.signal_to_check_historic, df2=self.signal_to_check_against_historic  )
+        self.diff_current_rel, self.diff_current_abs = self.get_dif_between2signals(df1=self.signal_to_check_current, df2=self.signal_to_check_against_current  )
+        self.ks_test = ks_2samp(self.diff_current_rel, self.diff_historic_rel)
+
+    today=datetime.date.today()
+    #To get a good estimate of this weeks psr, we include all data until the previous day until 23:59:59
+    yesterday = today- datetime.timedelta(days=1)
+    yesterday = yesterday.strftime("%Y-%m-%d")+ " 23:59:59"
     
+    def load_signal(self, source,parameter_name, start='2022-01-01', end=''):
+        blockPrint()
+        dp = DataPool()
+        enablePrint()
+        if end!='':
+            data_loaded = dp.signal.get(source_name=source, start=start, end=end, parameter_name=parameter_name)
+        else: 
+            data_loaded = dp.signal.get(source_name=source, start=start, end=end, parameter_name=parameter_name)
+        data_loaded = helper_functions.downsample_data(data_loaded, groupby_att='source')
+
+        return data_loaded
+
+    def load_config_json(self, path_to_config):
+        '''
+        loads a json config file
+
+        Parameters
+        ----------
+        path_to_config : str 
+            path to config file
+        '''
+        path=Path(path_to_config)
+        file=open(path)
+        data=json.load(file)
+        return data
+
+    def get_current_and_date4monthago(self):
+        '''
+        get the current date and the date 4 montghs ago 
+        '''
+        today=datetime.date.today()
+        
+        last_week = today - datetime.timedelta(weeks=1)
+        last_week = last_week.strftime("%Y-%m-%d")
+
+        last_4month = today - datetime.timedelta(weeks=16)
+        last_4month = last_4month.strftime("%Y-%m-%d")
+
+        today=today.strftime("%Y-%m-%d")
+
+        return(today, last_week, last_4month)
+
+    def get_dif_between2signals(self, df1, df2, timestamp_col1='timestamp', timestamp_col2='timestamp', value_col1='value', value_col2='value', standardize=True):
+        '''
+        takes two signals, joins them on the same timestamp, standardizes them and takes the difference.
+
+        Parameters 
+        ----------
+        df1 : pandas DataFrame
+            first dataframe
+        df2 : pandas DataFrame
+            second dataframe
+        timestamp_col1 : str
+            name of column in df1 containing timestamp info
+        timestamp_col2 : str
+            name of column in df2 containin timestamp info
+        value_col1 : str
+            name of column in df1 containing value info
+        value_col2 : str
+            name of column in df2 contatining value info
+        standardize : bool
+            wheter or not data is standardized (x-mean(x))/std(x))
+        '''
+        data1=df1[[timestamp_col1, value_col1]].set_index(timestamp_col1)
+        data2=df2[[timestamp_col2, value_col2]].set_index(timestamp_col2)
+
+        dataToCompare=pd.merge(data1, data2, left_index=True, right_index=True, how='inner', suffixes=('_x', '_y'))
+        if standardize==True:
+            dataToCompare = (dataToCompare-dataToCompare.mean())/dataToCompare.std()
+        dataToCompare = dataToCompare.rolling(window=24).mean()
+        dataToCompare['abs_difference']=dataToCompare['value_x']-dataToCompare['value_y']
+        dataToCompare['rel_difference']=dataToCompare['abs_difference']/dataToCompare['value_y']
+        return (dataToCompare['rel_difference'], dataToCompare['abs_difference'])
+    
+
+class PSR_Sensor():
+    ''''
+    Class to check the current PSR of a Sensor
+    '''
     def __init__(self, source_name, start_date, end_date):
         self.old_mean = 0
         self.source_name = source_name
@@ -167,6 +343,23 @@ def main():
     pp.df_to_pdf(unsuspicious_sensors, 'Sensors which PSR are not suspicious:\nPSR is less than 2 standard deviation lower\nthan mean over last 16 weeks')
     pp.df_to_pdf(skipped_sensors, 'Skipped Sensors:\nProbably because no measurements during\nlast 4 months')      
     pp.close()  
+    
+    '''
+    Next i wanted to do a check of the acutal signal. The Idea is as following:
+        1. Create a config_file.json file that stores information which sensors show similiar measurements. The file here shows the concept:
+            C:\Users\steineph\DataAnalysis\UWO-Dataanalysis\config_concept.json
+            The file with all the measurement comparisons has yet to be made - I didnt manage. The file I created only shows the "correct" structure
+        2. Loop through all sensors and do following (the sample code should work... however since my config file does only really hold the necessary
+            information for this specific sensor, it is the only one that currently "works".):  
+
+                #do this for all important sensors! (To check whats happenign, go to the Check_Signal_Sensor class)
+                signal_to_check = Check_Signal_Sensor(source_to_check='bt_dl917_162_luppmenweg')
+                if (signal_to_check.ks_test[0] < 0.2) and (signal_to_check.ks_test[1] )<0.05:  #The two thresholds have to be defined!
+                    print(f'{signal_to_check.source_to_check} is suspicious! Its difference to {signal_to_check_against} is significantly\n different to what it used to be (over the last 4 month))
+                else: 
+                    print(f'{signal_to_check.source_to_check} is not suspicious!)
+        3. Instead of printing these statements, put the calcuated statistics in a report similar to the PSR test!
+    '''
 
 if __name__ == '__main__':
     main()

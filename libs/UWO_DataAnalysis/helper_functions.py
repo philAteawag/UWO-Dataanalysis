@@ -1,3 +1,4 @@
+from doctest import ELLIPSIS_MARKER
 import seaborn as sns
 from datapool_client import DataPool
 import pandas as pd
@@ -148,7 +149,9 @@ def plot_packages_received_histogram(source_name, start_date, save_directory='')
     plt.close('all')
 
 def plot_timeseries(source_name, start_date, save_directory=''):
-    'plots_the_timeseries'
+    '''
+    plots_the_timeseries
+    '''
     dp=DataPool()
     #get all sensor data from the database
     all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, minimal=False, show_query=False, to_dataframe=True)
@@ -175,6 +178,30 @@ def plot_timeseries(source_name, start_date, save_directory=''):
         if not os.path.exists(os.path.join(save_directory, 'timeseries')):
             os.makedirs(os.path.join(save_directory, 'timeseries'))
         fig.write_html(os.path.join(save_directory, 'timeseries', '{}_{}.html'.format(source_name, parameter_value)))
+
+def find_all_sensor_groups():
+    '''
+    helper function to find different sensor groups (defined by their prefix bt, bm, bx ...)
+    '''
+    all_types=[]
+    dp=DataPool()
+    for source in list(dp.source.all()['name']):
+        if source.split('_')[0] in all_types:
+            continue
+        else:
+            all_types.append(source.split('_')[0])
+    return all_types
+
+def find_nb_of_sensor_within_group(group):
+    '''
+    helper function to find amount of sensors within a group
+    '''
+    dp=DataPool()
+    counter=0
+    for source in list(dp.source.all()['name']):
+        if source.split('_')[0] == group:
+            counter=counter+1
+    return counter
 
 def calculate_PSR(source_name, start_date,  resolution='M', allow_higher_samplingrates=True, thresh_drop_values=-100000, end_date='' ):
     '''
@@ -210,7 +237,7 @@ def calculate_PSR(source_name, start_date,  resolution='M', allow_higher_samplin
     main_parameters=extract_main_parameter(all_parameters)
     if len(main_parameters)<1:
         warnings.warn('could not find a main measurement parameter for this sensor: {}.'.format(source_name))
-        return None
+        parameter_value=all_parameters[0]
     elif len(main_parameters)>1:
         warnings.warn('found multiple main measurement parameters ({}) for this sensor: {}. All but {} will be discarded!'.format(main_parameters, source_name, main_parameters[0]))
         parameter_value=(main_parameters[0])
@@ -488,7 +515,19 @@ def generate_accepted_values(data):
 def downsample_data(dataframe, timestamp_col_name='timestamp', groupby_att='source_name', resampling_freq='1H'):
     '''
     downsamples data of a dataframe. Can be used, if downsampling has to occur per group
-    instead of th whole dataframe alltogheter.
+    instead of th whole dataframe alltogheter. Resampling is done by aggreagating using the mean
+    
+    Parameters 
+    ----------
+    dataframe : pandas DataFrame
+        data containing the timeseries that will be down/resampled
+    timestamp_col_name : str
+        name of column that stores the timestamp information
+    groupby_att : 
+        samples will be grouped before time series are resampled.
+        The grouping attribute can be set here.
+    resampling_freq : DateOffset, Timedelta or str
+        The offset string or object representing target conversion.
     '''
 
     data=dataframe.set_index(timestamp_col_name)
@@ -572,10 +611,10 @@ def plot_flattened_signal(data, group_att='source_name', value_column='value',
         plotdata_filtered['trend']=plotdata_filtered['value_after_median'].rolling(window=mean_win_size, center=True).mean()
 
         if normalize == 'mean':
-            plotdata_filtered['trend']=plotdata_filtered['trend']/plotdata_filtered['value'].mean()
+            plotdata_filtered['trend']=(plotdata_filtered['trend']-plotdata_filtered['value'].mean())/plotdata_filtered['trend'].std()
 
         if normalize == 'median':
-            plotdata_filtered['trend']=plotdata_filtered['trend']/plotdata_filtered['value'].median()
+            plotdata_filtered['trend']=(plotdata_filtered['trend']-plotdata_filtered['value'].median())/plotdata_filtered['trend'].std()
 
         lineplot=sns.lineplot(data=plotdata_filtered, x='timestamp', y='trend', ax=ax, label=source)
         #lineplot=sns.scatterplot(data=plotdata_filtered, x='timestamp', y='trend', ax=ax, label=source)
