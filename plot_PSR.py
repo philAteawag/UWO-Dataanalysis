@@ -86,7 +86,7 @@ def make_PSR_Plot(how, frequency,save_directory, start_date='2016-01-01', end_da
     elif how == 'x_Sensors_1_Frequency': 
         df_grouped=pd.DataFrame()
         sensor_groups=helper_functions.find_all_sensor_groups()
-        for group in ['bp']:
+        for group in sensor_groups:
             savepath=os.path.join(save_directory, group)
             if not os.path.exists(savepath):
                 os.makedirs(savepath)
