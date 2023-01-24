@@ -287,12 +287,12 @@ def filter_db_for_boxplot(sensor_group, start, parameter_unit, keyword):
     dp=DataPool()
     data_dataframe = dp.query_df(
     f'''
-    SELECT  t_signal.value, t_signal.timestamp, t_signal.parameter_id, t_signal.source_id, t_source.name as source_name, t_parameter.name AS parameter_name, t_parameter.unit
+    SELECT  t_signal.value, t_signal.timestamp, t_signal.variable_id, t_signal.source_id, t_source.name as source_name, t_parameter.name AS parameter_name, t_parameter.unit
     FROM signal AS t_signal
     LEFT JOIN source AS t_source
         ON t_signal.source_id = t_source.source_id
-    LEFT JOIN parameter AS t_parameter
-        ON t_signal.parameter_id = t_parameter.parameter_id
+    LEFT JOIN variable AS t_parameter
+        ON t_signal.variable_id = t_parameter.variable_id
     WHERE LEFT(t_source.name, 2 ) = '{sensor_group}' AND t_signal.timestamp > '{start}' AND t_parameter.unit='{parameter_unit}'
     '''
     )
