@@ -4,9 +4,10 @@
 from pathlib import Path
 
 
+import pandas as pd
 from datapool_client import DataPool
-import plotly.offline as py
 import plotly.graph_objs as go
+import plotly.subplots as subp
 
 
 HEATMAP_QUERY = f"""
@@ -33,22 +34,7 @@ INNER JOIN source ON source.source_id = count_table.source_id
 order by date_trunc desc;
 """
 
-EXCLUDE_LIST = [
-    "bf_plsABL1101_outflow_ara",
-    "bt_plsABL1301_outflow_ara",
-    "bq_plsABL3701_outflow_ara",
-    "bl_plsZUH1201_inflow_ara",
-    "bt_plsZUL1311_inflow_ara",
-    "bq_plsZUL3201_inflow_ara",
-    "bl_plsRFBA1201_sk_ara",
-    "bl_plsRKBA1201_rubbasin_ara",
-    "bl_plsRKBM1201_rubmorg_inflow",
-    "bl_plsRKBM1203_rub_morg",
-    "bf_plsRKBU1101_rub128basin_usterstr",
-    "bl_plsRKBU1201_rub128basin_usterstr",
-    "bl_plsRKPI1201_rubpw80sbw_industry",
-    "bn_plsALG1801E_ara_flatroof",
-]
+EXCLUDE_LIST = []
 
 
 def exclude_data(data, exclude_list):
@@ -117,15 +103,50 @@ def group_main_heatmap(heatmap_main):
     return groups
 
 
-def generate_heatmaps(df, auto_open=True):
+def generate_heatmap(df, target_directory: Path):
+
     df = df.dropna(how="all")
-    i_plot = df.iplot(
-        title="Datapool Content", kind="heatmap", colorscale="ylgn", asFigure=True
+
+    fig = subp.make_subplots(
+        rows=4,
+        cols=1,
+        shared_xaxes=True,
+        subplot_titles=("Package A1", "Package A2", "Package A3", "Package A4"),
+        vertical_spacing=0.05,
     )
-    plot_dict = i_plot.to_dict()
-    plot_dict["layout"]["margin"] = {"l": 250, "r": 50}
-    i_plot = go.Figure(plot_dict)
-    py.plot(i_plot, auto_open=auto_open)
+
+    fig.add_trace(
+        go.Heatmap(x=df.index, y=df.columns, z=df.values, coloraxis="coloraxis"), 1, 1
+    )
+
+    fig.add_trace(
+        go.Heatmap(x=df.index, y=df.columns, z=df.values, coloraxis="coloraxis"), 2, 1
+    )
+
+    fig.add_trace(
+        go.Heatmap(x=df.index, y=df.columns, z=df.values, coloraxis="coloraxis"), 3, 1
+    )
+
+    fig.add_trace(
+        go.Heatmap(x=df.index, y=df.columns, z=df.values, coloraxis="coloraxis"), 4, 1
+    )
+
+    fig.update_layout(coloraxis={"colorscale": "blues"})
+
+    fig.update_layout(
+        autosize=False,
+        width=1600,
+        height=1200,
+    )
+
+    fig.update_annotations(font=dict(family="Helvetica", size=20))
+
+    fig.layout.annotations[0].update(x=-0.05)
+    fig.layout.annotations[2].update(x=-0.05)
+    fig.layout.annotations[1].update(x=-0.05)
+    fig.layout.annotations[3].update(x=-0.05)
+
+    fig.write_image(target_directory.parent / "figure" / "figure_1.png")
 
 
 # groups = group_main_heatmap(heatmap_main)
@@ -144,11 +165,27 @@ def generate_heatmaps(df, auto_open=True):
 #     )
 
 
-def main(dp: DataPool, target_directory: Path) -> None:
+def main(target_directory: Path, reload_data: bool) -> None:
 
-    data = dp.query_df(HEATMAP_QUERY)
+    if reload_data:
+        dp = DataPool(
+            host="eaw-sdwh3.eawag.wroot.emp-eaw.ch",
+            port="5432",
+            database="datapool",
+            user="datapool",
+            password="corona666",
+            to_replace={"parameter": "variable"},
+        )
+        data = dp.query_df(HEATMAP_QUERY)
+        data.to_csv(target_directory / "heatmap_data.csv", index=False)
+    else:
+        data = pd.read_csv(target_directory / "heatmap_data.csv")
 
-    data.to_csv(target_directory / "heatmap_data.csv", index=False)
+    data["date_trunc"] = pd.to_datetime(data["date_trunc"], format="%Y-%m-%d")
+
+    data = data.loc[
+        (data["date_trunc"] >= "2018-01-01") & (data["date_trunc"] < "2023-01-01")
+    ]
 
     data = exclude_data(data, EXCLUDE_LIST)
 
@@ -156,20 +193,11 @@ def main(dp: DataPool, target_directory: Path) -> None:
     pivot = format_time_to_source(highest)
     heatmap_main = normalize_matrix(pivot)
 
-    generate_heatmaps(heatmap_main)
+    generate_heatmap(heatmap_main, target_directory)
 
 
 if __name__ == "__main__":
 
     target_directory = Path("/home/adisch/VisualStudioProjects/data/processed")
 
-    dp = DataPool(
-        host="eaw-sdwh3.eawag.wroot.emp-eaw.ch",
-        port="5432",
-        database="datapool",
-        user="datapool",
-        password="corona666",
-        to_replace={"parameter": "variable"},
-    )
-
-    main(dp, target_directory)
+    main(target_directory, reload_data=False)

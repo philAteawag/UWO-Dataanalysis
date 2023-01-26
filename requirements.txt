@@ -1,3 +1,4 @@
 datapool-client==1.1
 plotly==5.13.0
 pendulum==2.1.2
+kaleido==0.2.1
