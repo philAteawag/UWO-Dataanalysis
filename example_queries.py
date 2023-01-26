@@ -127,6 +127,86 @@ def example_query_3(db_file: str) -> pd.DataFrame:
     return query(db_file, example_query)
 
 
+def example_query_4(db_file: str) -> pd.DataFrame:
+    """Count the entries for all the weekly aggregated data within the database and group by source and parameter."""
+
+    example_query = f"""
+    
+    WITH count_table AS (
+    SELECT 
+        count(parameter_id), 
+        parameter_id, 
+        source_id, 
+        date_trunc('week', timestamp)
+    FROM signal
+    GROUP BY 
+        date_trunc('week', timestamp), 
+        parameter_id, 
+        source_id
+    )
+    SELECT 
+        count_table.count AS value_count, 
+        parameter.name AS parameter_name, 
+        source.name AS source_name,
+        count_table.date_trunc AS date_trunc
+    FROM count_table
+    INNER JOIN parameter ON parameter.parameter_id = count_table.parameter_id
+    INNER JOIN source ON source.source_id = count_table.source_id
+    order by date_trunc desc;
+    
+    """
+
+    return query(db_file, example_query)
+
+
+def example_query_5(db_file: str) -> pd.DataFrame:
+    """All data from package A1."""
+
+    example_query = f"""
+    
+
+    
+    """
+
+    return query(db_file, example_query)
+
+
+def example_query_6(db_file: str) -> pd.DataFrame:
+    """All data from package A2."""
+
+    example_query = f"""
+    
+    
+    
+    """
+
+    return query(db_file, example_query)
+
+
+def example_query_7(db_file: str) -> pd.DataFrame:
+    """All data from package A3."""
+
+    example_query = f"""
+    
+    
+    
+    """
+
+    return query(db_file, example_query)
+
+
+def example_query_8(db_file: str) -> pd.DataFrame:
+    """All data from package A4."""
+
+    example_query = f"""
+    
+    
+    
+    """
+
+    return query(db_file, example_query)
+
+
 def main(args: argparse.Namespace) -> None:
 
     path_to_db = pathlib.Path(args.sourcedirectory)
@@ -138,6 +218,11 @@ def main(args: argparse.Namespace) -> None:
     print(example_query_1(db_file=db))
     print(example_query_2(db_file=db))
     print(example_query_3(db_file=db))
+    print(example_query_4(db_file=db))
+    print(example_query_5(db_file=db))
+    print(example_query_6(db_file=db))
+    print(example_query_7(db_file=db))
+    print(example_query_8(db_file=db))
 
 
 if __name__ == "__main__":
