@@ -41,12 +41,27 @@ def _query_df(conn, sql_query):
     )
 
 
-def query(db_file, sql_query, return_dataframe=True):
-    with open_sqlite(db_file) as conn:
+def query(db_file: pathlib.PosixPath | list[pathlib.PosixPath], sql_query: str, return_dataframe: bool=True):
+
+    if not isinstance(db_file, list):
+        with open_sqlite(db_file) as conn:
+            if return_dataframe:
+                return _query_df(conn, sql_query)
+            else:
+                return _query_plain(conn, sql_query)
+    else:
+        res_df = pd.DataFrame()
+        res_list = []
+        for _db_file in db_file:
+            with open_sqlite(_db_file) as conn:
+                if return_dataframe:
+                    res_df = res_df.append(_query_df(conn, sql_query))
+                else:
+                    res_list.append(_query_plain(conn, sql_query))
         if return_dataframe:
-            return _query_df(conn, sql_query)
+            return res_df
         else:
-            return _query_plain(conn, sql_query)
+            return res_list
 
 
 def example_query_1(db_file: str) -> pd.DataFrame:
@@ -159,12 +174,27 @@ def example_query_4(db_file: str) -> pd.DataFrame:
     return query(db_file, example_query)
 
 
-def example_query_5(db_file: str) -> pd.DataFrame:
+def example_query_5(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> pd.DataFrame:
     """All data from package A1."""
 
-    example_query = f"""
-    
+    content_a1 = pd.read_csv(cl_file, sep=",")
 
+    example_query = f"""
+
+    SELECT
+        signal.timestamp,
+        value,
+        unit,
+        parameter.name,
+        source_type.name,
+        source.name
+    FROM signal
+        INNER JOIN site ON signal.site_id = site.site_id
+        INNER JOIN parameter ON signal.parameter_id = parameter.parameter_id
+        INNER JOIN source ON signal.source_id = source.source_id
+        INNER JOIN source_type ON source.source_type_id = source_type.source_type_id
+    WHERE test_column IN
+      {content_a1['sources']}
     
     """
 
@@ -206,12 +236,27 @@ def example_query_8(db_file: str) -> pd.DataFrame:
 
     return query(db_file, example_query)
 
+def example_query_9(db_file: str) -> pd.DataFrame:
+    """Data from all of the yearly slices."""
+
+    
+
+    example_query = f"""
+    
+    
+    
+    """
+
+    return query(db_file, example_query)
+
 
 def main(args: argparse.Namespace) -> None:
 
     path_to_db = pathlib.Path(args.sourcedirectory)
+    filename = args.filename
+    content_list = args.contentlist
 
-    db = path_to_db / "dp_copy.sqlite"
+    db = path_to_db / filename
 
     print(query(db, "SELECT name FROM source_type"))
 
@@ -219,16 +264,19 @@ def main(args: argparse.Namespace) -> None:
     print(example_query_2(db_file=db))
     print(example_query_3(db_file=db))
     print(example_query_4(db_file=db))
-    print(example_query_5(db_file=db))
-    print(example_query_6(db_file=db))
-    print(example_query_7(db_file=db))
-    print(example_query_8(db_file=db))
+    print(example_query_5(db_file=db, cl_file=content_list))
+    print(example_query_6(db_file=db, cl_file=content_list))
+    print(example_query_7(db_file=db, cl_file=content_list))
+    print(example_query_8(db_file=db, cl_file=content_list))
+    print(example_query_9(db_file=db))
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-sd", "--sourcedirectory", default="/path/to/db_file")
+    parser.add_argument("-fn", "--filename", default="dp.sqlite")
+    parser.add_argument("-cl", "--contentlist", default="package_information.csv")
 
     args = parser.parse_args()
 

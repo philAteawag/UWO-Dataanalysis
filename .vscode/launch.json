@@ -18,7 +18,10 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--sourcedirectory", "//eawag/ea-daten/Abteilungsprojekte/eng/SWWData/Christian_Foerster/open_data_publication"]
+            "args": [
+                "--sourcedirectory", "/home/adisch/VisualStudioProjects/data/raw",
+                "--filename", "data_UWO_2021-01_2022-01.sqlite"
+            ]
         }
     ]
 }
