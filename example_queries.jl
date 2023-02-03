@@ -1,82 +1,43 @@
-using SQLite
 using DataFrames
-
 using SQLite
-using ArgParse
 
-function open_sqlite(db_file)
-    conn = SQLite.DB(db_file)
-    try
-        yield(conn)
-    catch e
-        rollback(conn)
-        throw(e)
-    finally
-        close(conn)
-    end
-end
-
-function connect(db_file)
-    return SQLite.DB(db_file)
-end
-
-function _query_plain(conn, sql_query)
-    stmt = prepare(conn, sql_query)
-    res = execute(stmt)
-    close(stmt)
-    return res
-end
-
-function _query_df(conn, sql_query)
-    return DataFrame(query(conn, sql_query))
-end
-
-function query(db_file, sql_query, return_dataframe=true)
-    conn = open_sqlite(db_file)
-    if return_dataframe
-        return _query_df(conn, sql_query)
-    else
-        return _query_plain(conn, sql_query)
-    end
-end
 
 function example_query_1(db_file::String)
-    end_time = DateTime.now()
-    start_time = end_time - Day(30)
-
+    end_time = "2021-09-05"
+    start_time = "2021-09-01"
     location = "11e_russikerstr"
-
     example_query = """
     SELECT
         signal.timestamp,
         value,
         unit,
-        parameter.name,
+        variable.name,
         source_type.name,
         source.name
     FROM signal
         INNER JOIN site ON signal.site_id = site.site_id
-        INNER JOIN parameter ON signal.parameter_id = parameter.parameter_id
+        INNER JOIN variable ON signal.variable_id = variable.variable_id
         INNER JOIN source ON signal.source_id = source.source_id
         INNER JOIN source_type ON source.source_type_id = source_type.source_type_id
     WHERE site.name = '$location'
         AND signal.timestamp >= '$start_time'
         AND signal.timestamp <= '$end_time';
     """
-
-    return query(db_file, example_query)
+    db = SQLite.DB(db_file)
+    result = SQLite.execute(db, example_query)SQLite.execute
+    close(db)
+    return DataFrame(result)
 end
 
 function example_query_2(db_file::String)
-    parameter = "water_temperature"
-
+    variable = "water_temperature"
     example_query = """
-    WITH parameter_ids as (
-        SELECT parameter_id FROM parameter WHERE parameter.name = '$parameter'
+    WITH variable_ids as (
+        SELECT variable_id FROM variable WHERE variable.name = '$variable'
     ), source_ids as (
         SELECT DISTINCT source_id FROM signal
-        WHERE signal.parameter_id IN (
-            SELECT parameter_id FROM parameter_ids
+        WHERE signal.variable_id IN (
+            SELECT variable_id FROM variable_ids
         )
     )
     SELECT source.name from source
@@ -84,15 +45,17 @@ function example_query_2(db_file::String)
         SELECT source_id from source_ids
     )
     """
-
-    return query(db_file, example_query)
+    db = SQLite.DB(db_file)
+    result = SQLite.execute(db, example_query)
+    close(db)
+    return DataFrame(result)
 end
 
 using DataFrames, SQLite
 
 function example_query_3(db_file::String)
     type = "DS18B20"
-    query = """
+    example_query = """
     SELECT
         source.name,
         MAX(signal.timestamp)
@@ -103,102 +66,164 @@ function example_query_3(db_file::String)
     GROUP BY source.name
     ORDER BY MAX(signal.timestamp) ASC;
     """
-
     db = SQLite.DB(db_file)
-    result = SQLite.query(db, query)
+    result = SQLite.execute(db, example_query)
     close(db)
     return DataFrame(result)
 end
 
 function example_query_4(db_file::String)
-    query = """
+    example_query = """
     WITH count_table AS (
     SELECT 
-        count(parameter_id), 
-        parameter_id, 
+        count(variable_id), 
+        variable_id, 
         source_id, 
         date_trunc('week', timestamp)
     FROM signal
     GROUP BY 
         date_trunc('week', timestamp), 
-        parameter_id, 
+        variable_id, 
         source_id
     )
     SELECT 
         count_table.count AS value_count, 
-        parameter.name AS parameter_name, 
+        variable.name AS variable_name, 
         source.name AS source_name,
         count_table.date_trunc AS date_trunc
     FROM count_table
-    INNER JOIN parameter ON parameter.parameter_id = count_table.parameter_id
+    INNER JOIN variable ON variable.variable_id = count_table.variable_id
     INNER JOIN source ON source.source_id = count_table.source_id
     order by date_trunc desc;
     """
-
     db = SQLite.DB(db_file)
-    result = SQLite.query(db, query)
+    result = SQLite.execute(db, example_query)
     close(db)
     return DataFrame(result)
 end
 
-function example_query_5(db_file::String)
-    query = """
+function example_query_5(db_file::String, cl::String)
+    content_a1 = DataFrame(CSV.File(cl, delim=';'))
+    filter_a1 = content_a1[content_a1.A1 .== 1,:]
+    source_names_a1 = collect(filter_a1.source)
+    example_query = """
+    SELECT
+    signal.timestamp,
+    value,
+    unit,
+    variable.name,
+    source_type.name,
+    source.name
+    FROM signal
+    INNER JOIN site ON signal.site_id = site.site_id
+    INNER JOIN variable ON signal.variable_id = variable.variable_id
+    INNER JOIN source ON signal.source_id = source.source_id
+    INNER JOIN source_type ON source.source_type_id = source_type.source_type_id
+    WHERE source.name IN ($(fill("?, ", length(source_names_a1)-1)...),?)
+    """
+
+    db = SQLite.DB(db_file)
+    result = SQLite.execute(db, example_query)
+    close(db)
+    return DataFrame(result)
+end
+
+function example_query_6(db_file::String, cl::String)
+    content_a2 = DataFrame(CSV.File(cl, delim=';'))
+    filter_a2 = content_a4[content_a2.A2 .== 1,:]
+    source_names_a2 = collect(filter_a2.source)
+    example_query = """
+    SELECT
+    signal.timestamp,
+    value,
+    unit,
+    variable.name,
+    source_type.name,
+    source.name
+    FROM signal
+    INNER JOIN site ON signal.site_id = site.site_id
+    INNER JOIN variable ON signal.variable_id = variable.variable_id
+    INNER JOIN source ON signal.source_id = source.source_id
+    INNER JOIN source_type ON source.source_type_id = source_type.source_type_id
+    WHERE source.name IN ($(fill("?, ", length(source_names_a2)-1)...),?)
     """
     db = SQLite.DB(db_file)
-    result = SQLite.query(db, query)
+    result = SQLite.execute(db, example_query)
     close(db)
     return DataFrame(result)
 end
 
-function example_query_6(db_file::String)
-    query = """
+function example_query_7(db_file::String, cl::String)
+    content_a3 = DataFrame(CSV.File(cl, delim=';'))
+    filter_a3 = content_a4[content_a3.A3 .== 1,:]
+    source_names_a3 = collect(filter_a3.source)
+    example_query = """
+    SELECT
+    signal.timestamp,
+    value,
+    unit,
+    variable.name,
+    source_type.name,
+    source.name
+    FROM signal
+    INNER JOIN site ON signal.site_id = site.site_id
+    INNER JOIN variable ON signal.variable_id = variable.variable_id
+    INNER JOIN source ON signal.source_id = source.source_id
+    INNER JOIN source_type ON source.source_type_id = source_type.source_type_id
+    WHERE source.name IN ($(fill("?, ", length(source_names_a3)-1)...),?)
     """
     db = SQLite.DB(db_file)
-    result = SQLite.query(db, query)
+    result = SQLite.execute(db, example_query)
     close(db)
     return DataFrame(result)
 end
 
-function example_query_7(db_file::String)
-    query = """
+function example_query_8(db_file::String, cl::String)
+    content_a4 = DataFrame(CSV.File(cl, delim=';'))
+    filter_a4 = content_a4[content_a4.A4 .== 1,:]
+    source_names_a4 = collect(filter_a4.source)
+    example_query = """
+    SELECT
+    signal.timestamp,
+    value,
+    unit,
+    variable.name,
+    source_type.name,
+    source.name
+    FROM signal
+    INNER JOIN site ON signal.site_id = site.site_id
+    INNER JOIN variable ON signal.variable_id = variable.variable_id
+    INNER JOIN source ON signal.source_id = source.source_id
+    INNER JOIN source_type ON source.source_type_id = source_type.source_type_id
+    WHERE source.name IN ($(fill("?, ", length(source_names_a4)-1)...),?)
     """
     db = SQLite.DB(db_file)
-    result = SQLite.query(db, query)
+    result = SQLite.execute(db, example_query)
     close(db)
     return DataFrame(result)
 end
 
-function example_query_8(db_file::String)
-    query = """
-    """
-    db = SQLite.DB(db_file)
-    result = SQLite.query(db, query)
+function main(sourcedirectory, filename, contentlist)
+    db = joinpath(sourcedirectory, filename)
+    cl = joinpath(sourcedirectory, contentlist)
+
+    db = SQLite.DB(db)
+    result = DataFrame(SQLite.execute(db, "SELECT * FROM site LIMIT 5;"))
     close(db)
-    return DataFrame(result)
-end
+    println(result)
 
-function main(args::ArgParse.Namespace)
-
-    path_to_db = pathlib.Path(args.sourcedirectory)
-
-    db = path_to_db / "dp_copy.sqlite"
-
-    println(query(db, "SELECT name FROM source_type"))
-
-    println(example_query_1(db_file=db))
-    println(example_query_2(db_file=db))
-    println(example_query_3(db_file=db))
-    println(example_query_4(db_file=db))
-    println(example_query_5(db_file=db))
-    println(example_query_6(db_file=db))
-    println(example_query_7(db_file=db))
-    println(example_query_8(db_file=db))
+    # println(example_query_1(db))
+    # println(example_query_2(db))
+    # println(example_query_3(db))
+    # println(example_query_4(db))
+    # println(example_query_5(db, cl))
+    # println(example_query_6(db, cl))
+    # println(example_query_7(db, cl))
+    # println(example_query_8(db, cl))
 
 end
 
-parser = ArgParse.ArgumentParser()
-ArgParse.add_argument!(parser, ["-sd", "--sourcedirectory"], default="/path/to/db_file")
-
-args = ArgParse.parse_args(parser)
-
-main(args)
+sourcedirectory ="Q:/Abteilungsprojekte/eng/SWWData/2015_fehraltorf/uwo_data_slices"
+filename="data_UWO_2020-01_2021-01.sqlite"
+contentlist="package_information.csv"
+main(sourcedirectory, filename, contentlist)

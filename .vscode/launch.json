@@ -9,7 +9,12 @@
         "request": "launch",
         "name": "Launch Program",
         "program": "${workspaceFolder}/sdts/use_sdts.jl",
-        "stopOnEntry": false
+        "stopOnEntry": false,
+        "args": [
+            "--sourcedirectory", "Q:/Abteilungsprojekte/eng/SWWData/2015_fehraltorf/uwo_data_slices",
+            "--filename", "data_UWO_2021-01_2022-01.sqlite",
+            "--contentlist", "package_information.csv",
+        ]
     },
         {
             "name": "Python: Current File",
@@ -19,8 +24,9 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "--sourcedirectory", "/home/adisch/VisualStudioProjects/data/raw",
-                "--filename", "data_UWO_2021-01_2022-01.sqlite"
+                "--sourcedirectory", "Q:/Abteilungsprojekte/eng/SWWData/2015_fehraltorf/uwo_data_slices",
+                "--filename", "data_UWO_2021-01_2022-01.sqlite",
+                "--contentlist", "package_information.csv",
             ]
         }
     ]
