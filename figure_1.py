@@ -152,6 +152,8 @@ def generate_heatmap(df_a1, df_a2, df_a3, df_a4, target_directory: pathlib.Path)
 
     fig.write_image(target_directory.parent / "figure" / "figure_1.png")
 
+    fig.write_html(target_directory.parent / "figure" / "figure_1.html")
+
 
 # groups = group_main_heatmap(heatmap_main)
 # for group in groups:

@@ -45,6 +45,18 @@ def query(db_file: pathlib.PosixPath, sql_query: str, return_dataframe: bool=Tru
             return _query_df(conn, sql_query, query_args)
         else:
             return _query_plain(conn, sql_query)
+        
+
+def example_query_0(db_file: str) -> pd.DataFrame:
+    """List all special values."""
+
+    example_query = f"""
+
+    SELECT * FROM special_value_definition;
+
+    """
+
+    return query(db_file, example_query)
 
 
 def example_query_1(db_file: str) -> pd.DataFrame:
@@ -53,7 +65,7 @@ def example_query_1(db_file: str) -> pd.DataFrame:
     end_date = pendulum.datetime(year=2021, month=9, day=30)
     start_date = end_date.subtract(days=1)
 
-    location = "11e_russikerstr"
+    location = "rub_morg"
 
     example_query = f"""
 
@@ -282,8 +294,7 @@ def main(args: argparse.Namespace) -> None:
     db = path_to_db / filename
     cl = path_to_db / content_list
 
-    print(query(db, "SELECT * FROM site LIMIT 5;"))
-
+    print(example_query_0(db_file=db))
     # print(example_query_1(db_file=db))
     # print(example_query_2(db_file=db))
     # print(example_query_3(db_file=db))

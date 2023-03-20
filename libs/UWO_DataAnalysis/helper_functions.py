@@ -51,7 +51,9 @@ def extract_main_parameter(parameter_list):
     '''
     helper function to extract the main measurement parameter 
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     all_parameters = dp.parameter.all()
     main_parameters = all_parameters[all_parameters['description'].str.startswith('Main measurement parameter')]
     main_parameters = list(main_parameters['name'])
@@ -87,12 +89,14 @@ def downsampling_faulty_sensors2(dataframe, frequency):
     return dataframe
         
 def plot_packages_received_histogram(source_name, start_date, save_directory=''):
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     #get all sensor data from the database
     all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, minimal=False, show_query=False, to_dataframe=True)
 
     #we are only interested in the sensors actual value
-    all_parameters=all_sensor_data['parameter'].unique()
+    all_parameters=all_sensor_data['variable'].unique()
     main_parameters=extract_main_parameter(all_parameters)
     if len(main_parameters)<1:
         warnings.warn('could not find a main measurement parameter for this sensor: {}'.format(source_name))
@@ -108,7 +112,7 @@ def plot_packages_received_histogram(source_name, start_date, save_directory='')
         parameter_value=(main_parameters[0])
     else:
         parameter_value=main_parameters[0]
-    parameter_data=all_sensor_data[all_sensor_data['parameter']==parameter_value]
+    parameter_data=all_sensor_data[all_sensor_data['variable']==parameter_value]
 
     #convert to datetime
     parameter_data['timestamp']=pd.to_datetime(parameter_data['timestamp'])
@@ -152,12 +156,14 @@ def plot_timeseries(source_name, start_date, save_directory=''):
     '''
     plots_the_timeseries
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     #get all sensor data from the database
     all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, minimal=False, show_query=False, to_dataframe=True)
 
     #we are only interested in the sensors actual value
-    all_parameters=all_sensor_data['parameter'].unique()
+    all_parameters=all_sensor_data['variable'].unique()
     main_parameters=extract_main_parameter(all_parameters)
     if len(main_parameters)<1:
         warnings.warn('could not find a main measurement parameter for this sensor: {}'.format(source_name))
@@ -171,7 +177,7 @@ def plot_timeseries(source_name, start_date, save_directory=''):
     else:
         parameter_value=main_parameters[0]
     for parameter_value in main_parameters:    
-        parameter_data=all_sensor_data[all_sensor_data['parameter']==parameter_value]
+        parameter_data=all_sensor_data[all_sensor_data['variable']==parameter_value]
 
         parameter_data['timestamp']=pd.to_datetime(parameter_data['timestamp'])
         fig=px.scatter(parameter_data, x='timestamp', y='value', title="{}_{}".format(source_name, parameter_value))
@@ -184,7 +190,9 @@ def find_all_sensor_groups():
     helper function to find different sensor groups (defined by their prefix bt, bm, bx ...)
     '''
     all_types=[]
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     for source in list(dp.source.all()['name']):
         if source.split('_')[0] in all_types:
             continue
@@ -196,7 +204,9 @@ def find_nb_of_sensor_within_group(group):
     '''
     helper function to find amount of sensors within a group
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     counter=0
     for source in list(dp.source.all()['name']):
         if source.split('_')[0] == group:
@@ -226,14 +236,16 @@ def calculate_PSR(source_name, start_date,  resolution='M', allow_higher_samplin
     end_date : str
         data collected after end date will not be considered
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     #get all sensor data from the database
     if end_date!='':
         all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, end=end_date, minimal=False, show_query=False, to_dataframe=True)
     else:
         all_sensor_data = dp.signal.get(source_name=source_name, start=start_date, minimal=False, show_query=False, to_dataframe=True)
     #we are only interested in the sensors actual value
-    all_parameters=all_sensor_data['parameter'].unique()
+    all_parameters=all_sensor_data['variable'].unique()
     main_parameters=extract_main_parameter(all_parameters)
     if len(main_parameters)<1:
         warnings.warn('could not find a main measurement parameter for this sensor: {}.'.format(source_name))
@@ -243,7 +255,7 @@ def calculate_PSR(source_name, start_date,  resolution='M', allow_higher_samplin
         parameter_value=(main_parameters[0])
     else:
         parameter_value=main_parameters[0]
-    parameter_data=all_sensor_data[all_sensor_data['parameter']==parameter_value]
+    parameter_data=all_sensor_data[all_sensor_data['variable']==parameter_value]
 
     #convert to datetime
     parameter_data['timestamp']=pd.to_datetime(parameter_data['timestamp'])
@@ -284,7 +296,9 @@ def filter_db_for_boxplot(sensor_group, start, parameter_unit, keyword):
     However in some cases we need more filtering: Most bt sensors measure two temperatures. 
     We have to filter more in these cases - TODO! maybe give an option in the function? 
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     data_dataframe = dp.query_df(
     f'''
     SELECT  t_signal.value, t_signal.timestamp, t_signal.variable_id, t_signal.source_id, t_source.name as source_name, t_parameter.name AS parameter_name, t_parameter.unit
@@ -306,7 +320,9 @@ def filter_db_multiple_parameters(sensor_group, start, parameter_units):
     However in some cases we need more filtering: Most bt sensors measure two temperatures. 
     We have to filter more in these cases - TODO! maybe give an option in the function? 
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     data_dataframe = dp.query_df(
     f'''
     SELECT  t_signal.value, t_signal.timestamp, t_signal.parameter_id, t_signal.source_id, t_source.name as source_name, t_parameter.name AS parameter_name, t_parameter.unit
@@ -328,7 +344,9 @@ def filter_db_for_boxplot2(sensor_group, start, parameter_unit, keyword):
     However in some cases we need more filtering: Most bt sensors measure two temperatures. 
     We have to filter more in these cases - TODO! maybe give an option in the function? 
     '''
-    dp=DataPool()
+    dp=DataPool(to_replace={
+        "parameter": "variable"
+    })
     data_dataframe = dp.query_df(
     f'''
     SELECT  date_trunc('hour', t_signal.timestamp) AS timestamp, avg(t_signal.value) AS value, 

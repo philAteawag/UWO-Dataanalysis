@@ -2,18 +2,16 @@
 from pathlib import Path
 import pendulum
 
-from datapool_client import DataPool, reshape
+from datapool_client import DataPool
 
-target_directory = Path("C:/Users/dischand/switchdrive/UWO/Arbeiten und Artikel/UWO_Data_paper/ara_inflow")
+target_directory = Path("C:/Users/dischand/switchdrive/UWO/Arbeiten und Artikel/UWO_Data_paper/_ERIC/UWO_datapaper_ERIC/_A_field_observations")
 
 datapool_instance = DataPool(to_replace={"parameter": "variable"})
 
-# sources = ["bf_plsZUL1102_inflow_ara", "bf_plsZUL1101_inflow_ara"]
-sources = ["bf_plsABL1101_outflow_ara"]
+sources = ["bn_r03_rub_morg", "bf_plsZUL1100_inflow_ara"]
 
-start = "2016-04-11 08:54:00"
-end = "2020-08-31 23:59:59"
-# end = pendulum.now("Europe/Zurich").to_datetime_string()
+start = "2016-01-01 00:00:00"
+end = pendulum.now("Europe/Zurich").to_datetime_string()
 
 for s in sources:
 
