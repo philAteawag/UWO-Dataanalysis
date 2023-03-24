@@ -1,16 +1,30 @@
-# UWO-Dataanalysis
+# UWO data analysis
 
-Some scritps to analyze the UWO Data
+A collection of scripts for analyzing data from the UWO.
 
-## Overview Scripts
+## Data access
 
-### Python Scripts
+1. decentlab_client.py
 
-1. QH_relation.py:
+2. example_queries.jl
 
-    script to find QH ([l/s] and [mm]) relation for sensors that do measure both parameters. 
+3. example_queries.m
+
+4. example_queries.py
+
+5. query_datapool.py
+
+## Field observation
+
+1. check_sqlite_consistency.py
+
+    Check how to merge files, check if data is consitent (read source data from life system and
+    compare to sqlite), check if only the data is in there that we want to publish, is there
+    unnecessary data, export some example images and check them, ...
+
+## Maintenance
     
-2. check_sensors.py
+1. check_sensors.py
     
     First attempt of script to automatically detect faulty sensors. The script should be run once a week. 
         
@@ -24,53 +38,39 @@ Some scritps to analyze the UWO Data
          - only have "proof of concept". Must be further developed before it has any use
          - Is not included on report
  
- 3.  plot_PSR.py
-  
-     script to create PSR Heatmaps.
-     
- 4.  libs/helper_functions.py
- 
-     most of the helper functions are found in this file
-    
- 5. create_psr_pp.py
-  
-     Not really useful anymore... was used to automate a pp 
-     
- ### Notebooks
- 
- 1. CompareFilteredSignal.ipynb
-    
+2. comparefilteredsignals.ipynb
+
     Interactive notebook to compare the signal of multiple sensors. It has some filtering options to filter out noise which increases abitlity to compare sensors.
- 
- 2. Compare_groups.ipynb
- 
+
+3. comparegroups.ipynb
+
     Interactive notebook to create boxplots to compare signal of multiple sensors.
-    
- 3. dataanalyisis2.ipynb
-    
-    can be deleted...
-  
- 4. explore_data_da.ipynb
 
-    can be deleted...
+4. config_concept.json
     
- 5. main.ipynb
-
-    can be deleted...
-    
- ### other files
- 
- 1. config_concept.json
-     
     This file links similiar measuring sensors. Such a file is needed if signal validation (at least the one that ive started) should be outmated.
     The file is completely incomplete and only shows the necessary structure.
     
- 2. requirements.txt
- 
-    Things should run if these packages are installed
- 
-    
-  
+5.  helper_functions.py
 
-  
-  
+    most of the helper functions are found in this file
+
+6.  plot_psr.py
+
+    script to create PSR Heatmaps.
+
+7. qh_relation.py:
+
+    script to find QH ([l/s] and [mm]) relation for sensors that do measure both parameters.
+
+## Paper
+
+Scripts whose output is used directly in the paper.
+
+1. figure_4_right.py
+
+    Produces the right part of Figure 4 with an overview of the available data in the form of a heat map.
+
+2. table_1.py
+
+    Produces the content of Table 1.
