@@ -14,7 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from scipy import stats
 from scipy.stats import ks_2samp
 
-from libs.UWO_DataAnalysis import helper_functions
+from . import helper_functions
 
 
 class Check_Signal_Sensor():
