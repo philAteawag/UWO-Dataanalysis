@@ -6,13 +6,23 @@ A collection of scripts for analyzing data from the UWO.
 
 1. decentlab_client.py
 
+    Connects to decentlab api and downloads data to a local folder.
+
 2. example_queries.jl
+
+    Sample queries to illustrate access to observation data in Julia.
 
 3. example_queries.m
 
+    Sample queries to illustrate access to observation data in Octave/Matlab.
+
 4. example_queries.py
 
+    Sample queries to illustrate access to observation data in Python.
+
 5. query_datapool.py
+
+    Sample usage of the datapool_client package.
 
 ## Field observation
 
