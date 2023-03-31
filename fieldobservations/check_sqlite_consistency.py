@@ -60,7 +60,6 @@ def open_sqlite(db_file):
 
 
 def query_sqlite(db_file: pathlib.PosixPath, sql_query: str):
-
     with open_sqlite(db_file) as conn:
         return pd.read_sql_query(
             sql_query,
@@ -69,7 +68,6 @@ def query_sqlite(db_file: pathlib.PosixPath, sql_query: str):
 
 
 def query_datapool(source, parameter, start, end):
-
     datapool_instance = DataPool(to_replace={"parameter": "variable"})
 
     data = datapool_instance.signal.get(
@@ -80,7 +78,6 @@ def query_datapool(source, parameter, start, end):
 
 
 def compare_data(sqlite_path: pathlib.Path, selection: dict) -> None:
-
     sql_query = f"""
         SELECT
         signal.timestamp AS timestamp,
@@ -107,11 +104,12 @@ def compare_data(sqlite_path: pathlib.Path, selection: dict) -> None:
     data_datapool = data_datapool[["timestamp", "value", "unit", "parameter", "source"]]
     data_datapool = data_datapool.sort_values(by="parameter")
 
-    data_sqlite = query_sqlite(sqlite_path, sql_query
-    )
+    data_sqlite = query_sqlite(sqlite_path, sql_query)
     data_sqlite = data_sqlite.sort_values(by="parameter")
 
-    print("############################################################################")
+    print(
+        "############################################################################"
+    )
     print("")
     print("### Consistency of datapool and SQLite")
     print("")
@@ -120,30 +118,34 @@ def compare_data(sqlite_path: pathlib.Path, selection: dict) -> None:
     print("")
     print(f"### These results are for the selection {selection}.")
     print("")
-    print(f"### Same variable name: {all(data_datapool['parameter'] == data_sqlite['parameter'])}")
+    print(
+        f"### Same variable name: {all(data_datapool['parameter'] == data_sqlite['parameter'])}"
+    )
     print(f"### Same unit: {all(data_datapool['unit'] == data_sqlite['unit'])}")
     print(
         f"### Value column no difference: {sum((data_datapool['value']-data_sqlite['value'])**2) == 0.0}"
     )
     print("")
-    print("############################################################################")
+    print(
+        "############################################################################"
+    )
 
 
 def export_image(sqlite_path: pathlib.Path, selection: dict) -> None:
-
     with open_sqlite(sqlite_path) as conn:
         cursor = conn.cursor()
-        query = f"SELECT * FROM picture WHERE picture_id = '{selection.get('picture_id')}';"
+        query = (
+            f"SELECT * FROM picture WHERE picture_id = '{selection.get('picture_id')}';"
+        )
         cursor.execute(query)
         records = cursor.fetchall()
         for row in records:
             image = row[5]
-            with open(".image.jpg", 'wb') as file:
+            with open(".image.jpg", "wb") as file:
                 file.write(image)
 
 
 def main(args: argparse.Namespace) -> None:
-
     sd = pathlib.Path(args.sourcedirectory)
 
     selection = random.choice(COMBINATIONS)
@@ -154,7 +156,6 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-sd", "--sourcedirectory", default="/path/to/db_file")
 

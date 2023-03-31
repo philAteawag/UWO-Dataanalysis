@@ -38,14 +38,18 @@ def _query_df(conn, sql_query, query_args):
     )
 
 
-def query(db_file: pathlib.PosixPath, sql_query: str, return_dataframe: bool=True, query_args: list[str]=None):
-
+def query(
+    db_file: pathlib.PosixPath,
+    sql_query: str,
+    return_dataframe: bool = True,
+    query_args: list[str] = None,
+):
     with open_sqlite(db_file) as conn:
         if return_dataframe:
             return _query_df(conn, sql_query, query_args)
         else:
             return _query_plain(conn, sql_query)
-        
+
 
 def example_query_0(db_file: str) -> pd.DataFrame:
     """List all special values."""
@@ -169,7 +173,9 @@ def example_query_4(db_file: str) -> pd.DataFrame:
     return query(db_file, example_query)
 
 
-def example_query_5(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> pd.DataFrame:
+def example_query_5(
+    db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath
+) -> pd.DataFrame:
     """All data from package A1."""
 
     content_a1 = pd.read_csv(cl_file, sep=";")
@@ -198,7 +204,9 @@ def example_query_5(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> p
     return query(db_file, example_query, query_args=source_names_a1)
 
 
-def example_query_6(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> pd.DataFrame:
+def example_query_6(
+    db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath
+) -> pd.DataFrame:
     """All data from package A2."""
 
     content_a2 = pd.read_csv(cl_file, sep=";")
@@ -227,7 +235,9 @@ def example_query_6(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> p
     return query(db_file, example_query, query_args=source_names_a2)
 
 
-def example_query_7(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> pd.DataFrame:
+def example_query_7(
+    db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath
+) -> pd.DataFrame:
     """All data from package A3."""
 
     content_a3 = pd.read_csv(cl_file, sep=";")
@@ -256,7 +266,9 @@ def example_query_7(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> p
     return query(db_file, example_query, query_args=source_names_a3)
 
 
-def example_query_8(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> pd.DataFrame:
+def example_query_8(
+    db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath
+) -> pd.DataFrame:
     """All data from package A4."""
 
     content_a4 = pd.read_csv(cl_file, sep=";")
@@ -286,7 +298,6 @@ def example_query_8(db_file: pathlib.PosixPath, cl_file: pathlib.PosixPath) -> p
 
 
 def main(args: argparse.Namespace) -> None:
-
     path_to_db = pathlib.Path(args.sourcedirectory)
     filename = args.filename
     content_list = args.contentlist
@@ -306,7 +317,6 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-sd", "--sourcedirectory", default="/path/to/db_file")
     parser.add_argument("-fn", "--filename", default="dp.sqlite")

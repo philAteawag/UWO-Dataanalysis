@@ -25,10 +25,10 @@ def read_catchment_data(source_directory: pathlib.Path) -> gpd.GeoDataFrame:
 
     Args:
         source_directory: pathlib.Path object for the directory containing the data.
-    
+
     Returns:
         catchment areas
-    
+
     """
     faf_catchment = gpd.read_file(source_directory / "subcat_info.shp")
     faf_catchment = faf_catchment.to_crs("EPSG:21781")
@@ -36,7 +36,9 @@ def read_catchment_data(source_directory: pathlib.Path) -> gpd.GeoDataFrame:
     return faf_catchment
 
 
-def read_wells_data(source_directory: pathlib.Path) -> tuple[pd.DataFrame, gpd.GeoDataFrame]:
+def read_wells_data(
+    source_directory: pathlib.Path,
+) -> tuple[pd.DataFrame, gpd.GeoDataFrame]:
     """
     Reads in wells data.
 
@@ -64,7 +66,9 @@ def read_wells_data(source_directory: pathlib.Path) -> tuple[pd.DataFrame, gpd.G
     return wells_day, wells_coordinates
 
 
-def define_base_grid(faf_catchment: gpd.GeoDataFrame) -> tuple[np.meshgrid, np.meshgrid]:
+def define_base_grid(
+    faf_catchment: gpd.GeoDataFrame,
+) -> tuple[np.meshgrid, np.meshgrid]:
     """
     Defines a base grid for a given catchment area using its bounding box coordinates.
 
@@ -81,7 +85,7 @@ def define_base_grid(faf_catchment: gpd.GeoDataFrame) -> tuple[np.meshgrid, np.m
         np.arange(latmin - 100, latmax + 100, 0.5),
         np.arange(lonmin - 100, lonmax + 100, 0.5),
     )
-    
+
     return xx, yy
 
 
@@ -115,7 +119,9 @@ def interpolate_grid(
     return grid_z2
 
 
-def calc_initial_groundwatertable(faf_catchment: gpd.GeoDataFrame, grid_z2: np.ndarray, affine: rasterio.Affine):
+def calc_initial_groundwatertable(
+    faf_catchment: gpd.GeoDataFrame, grid_z2: np.ndarray, affine: rasterio.Affine
+):
     """
     Calculates the initial groundwater table elevation for each polygon in the given FAF catchment.
 
@@ -128,7 +134,7 @@ def calc_initial_groundwatertable(faf_catchment: gpd.GeoDataFrame, grid_z2: np.n
         The initial groundwater table elevation for each polygon in the FAF catchment, in the same order as the input GeoDataFrame.
 
     """
-    
+
     zs_faf = zonal_stats(
         faf_catchment["geometry"], grid_z2, affine=affine, stats="mean"
     )
@@ -141,7 +147,7 @@ def calc_initial_groundwatertable(faf_catchment: gpd.GeoDataFrame, grid_z2: np.n
 def add_modified_gwtable(
     faf_catchment: gpd.GeoDataFrame,
     groundwater: pd.DataFrame,
-    start_gwtable: list[float]
+    start_gwtable: list[float],
 ) -> gpd.GeoDataFrame:
     """
     Calculates groundwater levels for each catchment area on the given date.
@@ -179,7 +185,7 @@ def plot_data(faf_catchment: gpd.GeoDataFrame) -> None:
     of the geopandas package.
 
     Args:
-        faf_catchment: geopandas GeoDataFrame containing catchment area polygons.    
+        faf_catchment: geopandas GeoDataFrame containing catchment area polygons.
 
     """
 
@@ -188,7 +194,6 @@ def plot_data(faf_catchment: gpd.GeoDataFrame) -> None:
 
 
 def main(date: str, source_directory: pathlib.Path) -> None:
-
     faf_catchment = read_catchment_data(source_directory)
 
     wells_day, wells_coordinates = read_wells_data(source_directory)
@@ -208,7 +213,6 @@ def main(date: str, source_directory: pathlib.Path) -> None:
 
 
 if __name__ == "__main__":
-
     date = "2019-04-01"
     source_directory = pathlib.Path("C:/Users/dischand/VisualStudioProjects/data/raw")
 

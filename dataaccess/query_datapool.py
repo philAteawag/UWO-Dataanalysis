@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import pendulum
 
@@ -15,11 +14,7 @@ end = pendulum.now("Europe/Zurich").to_datetime_string()
 
 for s in sources:
 
-    data = datapool_instance.signal.get(
-        source_name=s, 
-        start=start, 
-        end=end
-    )
+    data = datapool_instance.signal.get(source_name=s, start=start, end=end)
 
     data = data[["timestamp", "value"]]
 

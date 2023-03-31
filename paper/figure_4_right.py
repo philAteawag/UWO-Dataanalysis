@@ -103,9 +103,18 @@ def group_main_heatmap(heatmap_main):
 
 
 def generate_heatmap(df_a1, df_a2, df_a3, df_a4, target_directory: pathlib.Path):
-
-    tot_col = len(df_a1.columns) + len(df_a2.columns) + len(df_a3.columns) + len(df_a4.columns)
-    row_widths = [len(df_a1.columns) / tot_col, len(df_a2.columns) / tot_col, len(df_a3.columns) / tot_col, len(df_a4.columns) / tot_col]
+    tot_col = (
+        len(df_a1.columns)
+        + len(df_a2.columns)
+        + len(df_a3.columns)
+        + len(df_a4.columns)
+    )
+    row_widths = [
+        len(df_a1.columns) / tot_col,
+        len(df_a2.columns) / tot_col,
+        len(df_a3.columns) / tot_col,
+        len(df_a4.columns) / tot_col,
+    ]
     row_widths.reverse()
 
     fig = subp.make_subplots(
@@ -114,23 +123,51 @@ def generate_heatmap(df_a1, df_a2, df_a3, df_a4, target_directory: pathlib.Path)
         shared_xaxes=True,
         subplot_titles=("Package A1", "Package A2", "Package A3", "Package A4"),
         vertical_spacing=0.05,
-        row_width=row_widths
+        row_width=row_widths,
     )
 
     fig.add_trace(
-        go.Heatmap(x=df_a1.index, y=df_a1.columns, z=df_a1.values.transpose(), coloraxis="coloraxis"), 1, 1
+        go.Heatmap(
+            x=df_a1.index,
+            y=df_a1.columns,
+            z=df_a1.values.transpose(),
+            coloraxis="coloraxis",
+        ),
+        1,
+        1,
     )
 
     fig.add_trace(
-        go.Heatmap(x=df_a2.index, y=df_a2.columns, z=df_a2.values.transpose(), coloraxis="coloraxis"), 2, 1
+        go.Heatmap(
+            x=df_a2.index,
+            y=df_a2.columns,
+            z=df_a2.values.transpose(),
+            coloraxis="coloraxis",
+        ),
+        2,
+        1,
     )
 
     fig.add_trace(
-        go.Heatmap(x=df_a3.index, y=df_a3.columns, z=df_a3.values.transpose(), coloraxis="coloraxis"), 3, 1
+        go.Heatmap(
+            x=df_a3.index,
+            y=df_a3.columns,
+            z=df_a3.values.transpose(),
+            coloraxis="coloraxis",
+        ),
+        3,
+        1,
     )
 
     fig.add_trace(
-        go.Heatmap(x=df_a4.index, y=df_a4.columns, z=df_a4.values.transpose(), coloraxis="coloraxis"), 4, 1
+        go.Heatmap(
+            x=df_a4.index,
+            y=df_a4.columns,
+            z=df_a4.values.transpose(),
+            coloraxis="coloraxis",
+        ),
+        4,
+        1,
     )
 
     fig.update_layout(coloraxis={"colorscale": "blues"})
@@ -191,7 +228,6 @@ def _query_df(conn, sql_query):
 
 
 def query(db_file: pathlib.PosixPath, sql_query: str):
-
     with open_sqlite(db_file) as conn:
         return _query_df(conn, sql_query)
 
@@ -203,7 +239,6 @@ def main(
     target_directory: pathlib.Path,
     reload_data: bool,
 ) -> None:
-
     if reload_data:
         db = source_directory / filename
         data = query(db, HEATMAP_QUERY)
@@ -218,7 +253,7 @@ def main(
     highest = get_highest_counts(data)
     pivot = format_time_to_source(highest)
     heatmap_main = normalize_matrix(pivot)
-    
+
     heatmap_main = heatmap_main.fillna(0)
 
     content = pd.read_csv(clfile, sep=";")
@@ -228,22 +263,37 @@ def main(
     df_a1 = heatmap_main[source_names_a1]
     filter_a2 = content[content["A2"] == 1]
     source_names_a2 = filter_a2["source"].to_list()
-    source_names_a2_updated = [x for x in source_names_a2 if x not in ['bl_dl318_597sbw_ara', 'bf_f04_23_bahnhofstr', 'bf_f06_11e_russikerstr', 'bf_f09_11e_russikerstr']]
+    source_names_a2_updated = [
+        x
+        for x in source_names_a2
+        if x
+        not in [
+            "bl_dl318_597sbw_ara",
+            "bf_f04_23_bahnhofstr",
+            "bf_f06_11e_russikerstr",
+            "bf_f09_11e_russikerstr",
+        ]
+    ]
     df_a2 = heatmap_main[source_names_a2_updated]
     filter_a3 = content[content["A3"] == 1]
     source_names_a3 = filter_a3["source"].to_list()
-    source_names_a3_updated = [x for x in source_names_a3 if x not in ['bt_dl912_rw137_schutzengasse']]
+    source_names_a3_updated = [
+        x for x in source_names_a3 if x not in ["bt_dl912_rw137_schutzengasse"]
+    ]
     df_a3 = heatmap_main[source_names_a3_updated]
     filter_a4 = content[content["A4"] == 1]
     source_names_a4 = filter_a4["source"].to_list()
-    source_names_a4_updated = [x for x in source_names_a4 if x not in ['bl_dl318_597sbw_ara', 'bt_dl912_rw137_schutzengasse']]
+    source_names_a4_updated = [
+        x
+        for x in source_names_a4
+        if x not in ["bl_dl318_597sbw_ara", "bt_dl912_rw137_schutzengasse"]
+    ]
     df_a4 = heatmap_main[source_names_a4_updated]
 
     generate_heatmap(df_a1, df_a2, df_a3, df_a4, target_directory)
 
 
 if __name__ == "__main__":
-
     source_directory = pathlib.Path(
         "Q:/Abteilungsprojekte/eng/SWWData/2015_fehraltorf/uwo_data_slices"
     )
@@ -253,7 +303,9 @@ if __name__ == "__main__":
 
     filename = "data_UWO_2019-01_2020-01.sqlite"
 
-    package_directory = pathlib.Path("C:/Users/dischand/switchdrive/UWO/Arbeiten und Artikel/UWO_Data_paper/_dataslice/_upload")
+    package_directory = pathlib.Path(
+        "C:/Users/dischand/switchdrive/UWO/Arbeiten und Artikel/UWO_Data_paper/_dataslice/_upload"
+    )
     cl_file = "package_information.csv"
     clfile = package_directory / cl_file
 
