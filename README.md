@@ -60,6 +60,14 @@ A collection of scripts for analyzing data from the UWO.
     
     This file links similiar measuring sensors. Such a file is needed if signal validation (at least the one that ive started) should be outmated.
     The file is completely incomplete and only shows the necessary structure.
+
+5. datasliceconsistency.py
+
+    With this script the data of the exported slices can be checked for their consistency with respect to the "dataslices_content_overview.csv" overview and the measured variables runoff and rainfall. The results are output in a log file.
+
+    Specifically, the number of data points for the sources and variable combinations for each year are output.
+    The amount of rain should be between 1000 and 2000 mm/a. Negative values are set to 0.
+    The amount of runoff should be less than the amount in the inflow of the ARA (bf_plsZUL1100_inflow_ara). Negative values are set to 0.
     
 5.  helper_functions.py
 
