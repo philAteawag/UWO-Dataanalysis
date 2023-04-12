@@ -190,11 +190,11 @@ def main(args: argparse.Namespace) -> None:
                     format="%(message)s",
                     level=logging.DEBUG)
 
-    # logging.info("Are all source from the file 'dataslices_content_overview.csv' existing in the data slices?")
-    # all_sources_available(package_content["source"].tolist(), dbs)
+    logging.info("Are all source from the file 'dataslices_content_overview.csv' existing in the data slices?")
+    all_sources_available(package_content["source"].tolist(), dbs)
 
-    # logging.info("Are all variables from the datapool export in the data slices?")
-    # all_variables_available(package_content["source"].tolist(), source_variable_overview, dbs)
+    logging.info("Are all variables from the datapool export in the data slices?")
+    all_variables_available(package_content["source"].tolist(), source_variable_overview, dbs)
 
     logging.info("Do the measured rainfall heights make sense?")
     check_rain_sums([
@@ -212,16 +212,16 @@ def main(args: argparse.Namespace) -> None:
         "bn_r05_schutzenhaus_burgweg"
         ], dbs)
     
-    # logging.info("Do the measured flow volumina make sense?")
-    # check_flow_volumes([
-    #     "bf_f02_555_mesikerstr",
-    #     "bf_f03_11e_russikerstr",
-    #     "bf_f07_23_bahnhofstr",
-    #     "bf_f08_166_luppmenweg",
-    #     "bf_f10_22a_bahnhofstr",
-    #     "bf_f12_47a_zurcherstr",
-    # ],
-    # "bf_plsZUL1100_inflow_ara", dbs)
+    logging.info("Do the measured flow volumina make sense?")
+    check_flow_volumes([
+        "bf_f02_555_mesikerstr",
+        "bf_f03_11e_russikerstr",
+        "bf_f07_23_bahnhofstr",
+        "bf_f08_166_luppmenweg",
+        "bf_f10_22a_bahnhofstr",
+        "bf_f12_47a_zurcherstr",
+    ],
+    "bf_plsZUL1100_inflow_ara", dbs)
 
 
 if __name__ == "__main__":
